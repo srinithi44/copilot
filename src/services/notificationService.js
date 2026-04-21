@@ -6,14 +6,20 @@ class NotificationService {
      */
     async getNotificationPreferences(userId) {
         try {
+            if (!userId) return null;
             const response = await fetch(`${API_BASE_URL}/notifications/preferences?userId=${userId}`);
             if (!response.ok) {
-                throw new Error('Failed to fetch notification preferences');
+                console.warn('Failed to fetch notification preferences:', response.status);
+                return null;
             }
             return await response.json();
         } catch (error) {
-            console.error('Error fetching notification preferences:', error);
-            throw error;
+            if (error.name === 'AbortError') {
+                console.log('Fetch preferences aborted');
+            } else {
+                console.error('Error fetching notification preferences:', error);
+            }
+            return null;
         }
     }
 
@@ -50,14 +56,20 @@ class NotificationService {
      */
     async getNotificationHistory(userId) {
         try {
+            if (!userId) return [];
             const response = await fetch(`${API_BASE_URL}/notifications/history?userId=${userId}`);
             if (!response.ok) {
-                throw new Error('Failed to fetch notification history');
+                console.warn('Failed to fetch notification history:', response.status);
+                return [];
             }
             return await response.json();
         } catch (error) {
-            console.error('Error fetching notification history:', error);
-            throw error;
+            if (error.name === 'AbortError') {
+                console.log('Fetch history aborted');
+            } else {
+                console.error('Error fetching notification history:', error);
+            }
+            return [];
         }
     }
 

@@ -26,12 +26,17 @@ export const getNearbyColleges = async (lat, lng) => {
     try {
         const response = await fetch(`${API_URL}/location/nearby?lat=${lat}&lng=${lng}`);
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to fetch colleges');
+            console.warn('Failed to fetch colleges:', response.status);
+            return [];
         }
         return await response.json();
     } catch (error) {
-        throw error;
+        if (error.name === 'AbortError') {
+            console.log('Fetch colleges aborted');
+        } else {
+            console.error('Error fetching colleges:', error);
+        }
+        return [];
     }
 };
 
@@ -39,11 +44,16 @@ export const searchLocation = async (query) => {
     try {
         const response = await fetch(`${API_URL}/location/search?query=${encodeURIComponent(query)}`);
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to search location');
+            console.warn('Failed to search location:', response.status);
+            return [];
         }
         return await response.json();
     } catch (error) {
-        throw error;
+        if (error.name === 'AbortError') {
+            console.log('Search location aborted');
+        } else {
+            console.error('Error searching location:', error);
+        }
+        return [];
     }
 };

@@ -31,13 +31,45 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const allowedOrigins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://studyplancopilot.onrender.com',
+    'https://studyplancopilot-znm2.onrender.com', // Added possible variations
     process.env.FRONTEND_URL
-].filter(Boolean);
+].map(url => url?.replace(/\/$/, '')).filter(Boolean);
+
+const allowedOriginPatterns = [
+    /^https:\/\/studyplancopilot(?:-[a-z0-9]+)?\.onrender\.com$/i
+];
 
 app.use(cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        // Allow non-browser clients and same-origin requests without Origin header.
+        if (!origin) return callback(null, true);
+
+        // Normalize origin for comparison (remove trailing slash if present)
+        const normalizedOrigin = origin.replace(/\/$/, '');
+
+        const isAllowedExact = allowedOrigins.includes(normalizedOrigin);
+        const isAllowedPattern = allowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin));
+
+        if (isAllowedExact || isAllowedPattern) {
+            return callback(null, true);
+        }
+        
+        console.warn(`[CORS] Request from blocked origin: ${origin}`);
+        // Instead of throwing an error which might strip CORS headers in some express configs,
+        // we return false to indicate it's not allowed.
+        return callback(null, false);
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With', 
+        'Accept', 
+        'Origin',
+        'X-Firebase-Auth'
+    ]
 }));
 
 app.use(express.json({ limit: '50mb' }));
@@ -57,6 +89,14 @@ app.use('/api/mcp', mcpRoutes);
 app.use('/api/copilot', studyCopilotRoutes);
 app.use('/api/files', fileUploadRoutes);
 app.use('/api', fileUploadRoutes);
+
+// Backward-compatible route mounts for deployments/frontends
+// still configured without the /api prefix.
+app.use('/', apiRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/mcp', mcpRoutes);
+app.use('/copilot', studyCopilotRoutes);
+app.use('/files', fileUploadRoutes);
 
 // OTP route
 app.post('/api/send-otp', async (req, res) => {
