@@ -1,0 +1,186 @@
+/* Floating Button */
+.mcp-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38BDF8, #0EA5E9);
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: transform 0.2s;
+}
+
+.mcp-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Chat Window */
+.mcp-chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    height: 500px;
+    max-height: calc(100vh - 120px);
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.mcp-header {
+    background: #f9fafb;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.mcp-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.mcp-header button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+/* Messages */
+.mcp-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mcp-message {
+    display: flex;
+}
+
+.mcp-message.user {
+    justify-content: flex-end;
+}
+
+.mcp-message.ai {
+    justify-content: flex-start;
+}
+
+.mcp-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mcp-message.user .mcp-bubble {
+    background: #38BDF8;
+    color: #FFFFFF;
+    border-bottom-right-radius: 2px;
+}
+
+.mcp-message.ai .mcp-bubble {
+    background: #f3f4f6;
+    color: #1f2937;
+    border-bottom-left-radius: 2px;
+}
+
+/* Input Area */
+.mcp-input-area {
+    padding: 15px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    background: #f9fafb;
+}
+
+.mcp-input-area input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+}
+
+.mcp-input-area input:focus {
+    border-color: #38BDF8;
+}
+
+.mcp-input-area button {
+    background: #38BDF8;
+    color: #FFFFFF;
+    border: none;
+    padding: 0 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.mcp-input-area button:disabled {
+    background: #9ca3af;
+}
+
+/* Structured Data Cards */
+.mcp-card {
+    margin-top: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.mcp-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.mcp-card ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+}
+
+.mcp-btn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.mcp-json {
+    font-size: 10px;
+    background: #eee;
+    padding: 5px;
+    overflow-x: auto;
+}

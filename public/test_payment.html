@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Razorpay Test</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #FAB400;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Razorpay UI Test</h1>
+    <button id="pay-btn">Test Payment UI</button>
+    <div id="log"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const KEY_ID = 'rzp_test_SCMClPIQXztzx8';
+
+        document.getElementById('pay-btn').addEventListener('click', async () => {
+            const log = document.getElementById('log');
+            log.innerHTML = 'Creating order...';
+
+            try {
+                const response = await fetch(`${API_URL}/payment/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const orderData = await response.json();
+
+                if (!orderData.id) {
+                    log.innerHTML = 'Error: ' + JSON.stringify(orderData);
+                    return;
+                }
+
+                log.innerHTML = 'Order Created: ' + orderData.id + '. Opening Checkout...';
+
+                const options = {
+                    key: KEY_ID,
+                    amount: orderData.amount,
+                    currency: "INR",
+                    name: "StudyPlan Test",
+                    description: "UI Test",
+                    order_id: orderData.id,
+                    handler: function (response) {
+                        alert("Success: " + response.razorpay_payment_id);
+                    },
+                    theme: {
+                        color: "#FAB400"
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                log.innerHTML = 'Exception: ' + err.message;
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+
+</html>

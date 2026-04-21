@@ -1,0 +1,127 @@
+.pomodoro-container {
+    background: rgba(255, 255, 255, 0.05);
+    /* Glassmorphism */
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    color: var(--text-color, #fff);
+    max-width: 350px;
+    margin: 1rem auto;
+}
+
+.pomodoro-header h3 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.mode-toggles {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.mode-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted, #aaa);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn.active {
+    background: var(--primary-color, #38BDF8);
+    color: #fff;
+    border-color: var(--primary-color, #38BDF8);
+    font-weight: bold;
+}
+
+.timer-display {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 2rem;
+}
+
+.circular-progress {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.inner-circle {
+    width: 90%;
+    height: 90%;
+    background: var(--bg-card, #1e1e1e);
+    /* Match card bg */
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.inner-circle span {
+    font-size: 3rem;
+    font-weight: bold;
+    font-family: 'Monaco', monospace;
+    /* Digital clock look */
+}
+
+.inner-circle p {
+    font-size: 0.9rem;
+    color: var(--text-muted, #aaa);
+    margin-top: 0.5rem;
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.control-btn {
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.control-btn:hover {
+    transform: scale(1.1);
+}
+
+.control-btn.main {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color, #38BDF8);
+    color: #fff;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+}
+
+.control-btn.secondary {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+}

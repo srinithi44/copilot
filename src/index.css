@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Inter", "Outfit", system-ui, -apple-system, sans-serif;
+    --color-primary: #0284C7;        /* Premium sapphire-like blue */
+    --color-secondary: #0369A1;
+    --color-background: #F8FAFC;
+    --color-card: #FFFFFF;
+    --color-text: #0F172A;
+    --color-section: #F1F5F9;
+}
+
+:root {
+    --primary-color: #0284C7;
+    --primary-hover: #0369A1;
+    --secondary-color: #0369A1;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --border-color: #E2E8F0;
+    --surface-color: #FFFFFF;
+    --surface-hover: #F8FAFC;
+    --section-bg: #F8FAFC;
+    --error-color: #EF4444;
+}
+
+body {
+    background-color: #FBFDFE; /* A brilliant premium off-white */
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    /* Soft noise / gradient for a premium look */
+    background-image: radial-gradient(circle at top right, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+                      radial-gradient(circle at bottom left, rgba(79, 70, 229, 0.03) 0%, transparent 40%);
+    min-height: 100vh;
+}
+
+/* Premium Light Glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.03), 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.glass-premium {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #0284C7, #4F46E5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #0284C7, #4F46E5);
+    box-shadow: 0 8px 16px -4px rgba(2, 132, 199, 0.2);
+}
+
+.section-padding {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+}

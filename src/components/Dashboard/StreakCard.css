@@ -1,0 +1,229 @@
+.streak-card-modern {
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.streak-card-modern:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Header */
+.streak-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    color: #f59e0b;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary, #1f2937);
+    letter-spacing: -0.02em;
+}
+
+.card-subtitle {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.risk-pill {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+/* Main Streak Display */
+.streak-main-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 0;
+    gap: 16px;
+}
+
+.streak-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 6px solid #f59e0b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(245, 158, 11, 0.1) 100%);
+    position: relative;
+    box-shadow: 0 0 0 12px rgba(251, 191, 36, 0.08);
+}
+
+.streak-number-large {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.streak-label-small {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+.motivational-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid-modern {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.stat-card {
+    background: var(--bg-secondary, #f9fafb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    background: var(--bg-hover, #f3f4f6);
+    transform: translateY(-1px);
+}
+
+.stat-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-label-modern {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary, #9ca3af);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.stat-value-modern {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary, #1f2937);
+    letter-spacing: -0.02em;
+}
+
+/* Warning Banner */
+.warning-banner {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #fbbf24;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #92400e;
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+}
+
+.warning-banner svg {
+    flex-shrink: 0;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .streak-card-modern {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .card-title {
+        color: #f9fafb;
+    }
+
+    .stat-card {
+        background: #111827;
+        border-color: #374151;
+    }
+
+    .stat-card:hover {
+        background: #1f2937;
+    }
+
+    .stat-value-modern {
+        color: #f9fafb;
+    }
+
+    .streak-circle {
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.15) 100%);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .streak-card-modern {
+        padding: 20px;
+    }
+
+    .streak-circle {
+        width: 140px;
+        height: 140px;
+    }
+
+    .streak-number-large {
+        font-size: 48px;
+    }
+
+    .stats-grid-modern {
+        grid-template-columns: 1fr;
+    }
+}
