@@ -64,13 +64,15 @@ function PrivateRoute({ children, allowedRoles }) {
 
 function PublicRoute({ children }) {
     const { currentUser } = useAuth();
+    const location = useLocation();
+    
     if (currentUser) {
-        // If logged in but not yet verified, ensure they go to OTP verification
-        if (!currentUser.isVerified) {
-            return <Navigate to="/email-verify" replace />;
+        // If we just created an account natively, let the Signup component complete the verification redirect
+        if (location.pathname === '/signup') {
+            return children;
         }
-        // If fully verified, navigate to main page
-        return <Navigate to="/" replace />;
+        // Otherwise, skip OTP for all existing users logging in and jump straight to the dashboard
+        return <Navigate to="/dashboard" replace />;
     }
     return children;
 }

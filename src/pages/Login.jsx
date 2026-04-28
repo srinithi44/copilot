@@ -42,13 +42,13 @@ export default function Login() {
                     return navigate('/dashboard');
 
                 } else {
-                    // User not found in backend - needs to complete registration
-                    navigate('/email-verify', { state: { from: '/dashboard' } });
+                    // User not found in backend - assume successful auth
+                    navigate('/dashboard');
                 }
             } catch (backendError) {
                 console.error('Backend check failed:', backendError);
-                // If backend check fails, default to email verification
-                navigate('/email-verify', { state: { from: '/dashboard' } });
+                // If backend check fails, default to dashboard
+                navigate('/dashboard');
             }
         } catch (err) {
             console.error(err);
@@ -110,8 +110,8 @@ export default function Login() {
 
                     if (registerResponse.ok) {
                         console.log('[Google Sign-In] User registered successfully');
-                        // Redirect to verification after successful registration
-                        navigate('/email-verify', { state: { from: '/dashboard' } });
+                        // Redirect directly to dashboard 
+                        navigate('/dashboard');
                     } else if (registerResponse.status === 409) {
                         // User already exists (duplicate email) - try to fetch and redirect
                         console.log('[Google Sign-In] User already exists, fetching profile...');
@@ -126,8 +126,8 @@ export default function Login() {
                             }
                             return navigate('/dashboard');
                         } else {
-                            // Fallback to verification
-                            navigate('/email-verify', { state: { from: '/dashboard' } });
+                            // Fallback to dashboard
+                            navigate('/dashboard');
                         }
                     } else {
                         const errorData = await registerResponse.json();
