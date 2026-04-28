@@ -99,7 +99,8 @@ app.use('/copilot', studyCopilotRoutes);
 app.use('/files', fileUploadRoutes);
 
 // OTP route
-app.post('/api/send-otp', async (req, res) => {
+// OTP route
+const otpHandler = async (req, res) => {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
     try {
@@ -115,7 +116,10 @@ app.post('/api/send-otp', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: 'Internal server error: ' + err.message });
     }
-});
+};
+
+app.post('/api/send-otp', otpHandler);
+app.post('/send-otp', otpHandler); // Backward-compatibility for Render VITE_API_URL
 
 // Start Server after DB Connection
 const startServer = async () => {
