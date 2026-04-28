@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
     Bell, 
     User, 
@@ -14,13 +14,15 @@ import {
     X,
     Settings,
     LogOut,
-    ChevronDown
+    ChevronDown,
+    FileText
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationDropdown from '../Notifications/NotificationDropdown';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getWeeklyMockTestProgress } from '../../services/api';
 
 const Header = () => {
     const { currentUser, logout } = useAuth();
@@ -29,7 +31,50 @@ const Header = () => {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [weeklyMockProgress, setWeeklyMockProgress] = useState(null);
     const userName = (currentUser?.name || currentUser?.displayName || 'User').split(' ')[0];
+
+    useEffect(() => {
+        let mounted = true;
+
+        const fetchWeeklyMockProgress = async () => {
+            try {
+                const cached = localStorage.getItem('weeklyMockProgress');
+                if (cached && mounted) {
+                    setWeeklyMockProgress(JSON.parse(cached));
+                }
+            } catch (_) {
+                // Ignore storage parse issues
+            }
+
+            if (!currentUser?.uid) {
+                if (mounted) setWeeklyMockProgress(null);
+                return;
+            }
+            try {
+                const progress = await getWeeklyMockTestProgress(currentUser.uid);
+                if (mounted) {
+                    setWeeklyMockProgress(progress);
+                    localStorage.setItem('weeklyMockProgress', JSON.stringify(progress));
+                }
+            } catch (error) {
+                // Keep cached value when backend is temporarily unavailable
+            }
+        };
+
+        const onProgressUpdated = (event) => {
+            if (mounted && event?.detail) {
+                setWeeklyMockProgress(event.detail);
+            }
+        };
+
+        fetchWeeklyMockProgress();
+        window.addEventListener('weekly-mock-progress-updated', onProgressUpdated);
+        return () => {
+            mounted = false;
+            window.removeEventListener('weekly-mock-progress-updated', onProgressUpdated);
+        };
+    }, [currentUser?.uid]);
 
     const primaryNav = [
         { label: 'AI Assistant', path: '/ask-doubt', icon: <Sparkles size={16} /> },
@@ -47,6 +92,7 @@ const Header = () => {
 
     const NavItem = ({ item }) => {
         const isActive = location.pathname === item.path;
+        const showMockProgressBadge = item.path === '/progress' && weeklyMockProgress;
         return (
             <Link
                 to={item.path}
@@ -60,6 +106,11 @@ const Header = () => {
                     {item.icon}
                 </span>
                 {item.label}
+                {showMockProgressBadge && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black tracking-wide">
+                        Mock {weeklyMockProgress.attemptsThisWeek}/3
+                    </span>
+                )}
                 {isActive && (
                     <motion.div 
                         layoutId="active-underline"
@@ -100,6 +151,24 @@ const Header = () => {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-6 shrink-0">
+                    {weeklyMockProgress && (
+                        <Link
+                            to="/mock-test"
+                            className="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md hover:border-primary/50 transition-all"
+                            title="Open AI Mock Test"
+                        >
+                            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                <FileText size={16} />
+                            </div>
+                            <div className="leading-tight">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Weekly Mock</p>
+                                <p className="text-xs font-bold text-slate-800">
+                                    {weeklyMockProgress.attemptsThisWeek}/3 · {weeklyMockProgress.averageAccuracy}%
+                                </p>
+                            </div>
+                        </Link>
+                    )}
+
                     <div className="hidden md:flex items-center gap-3">
                         <button className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-2xl transition-all relative border border-transparent">
                             <Bell size={22} />

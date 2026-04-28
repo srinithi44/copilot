@@ -130,6 +130,74 @@ class AIService {
             context = "No specific syllabus content found. Answer based on general academic knowledge if possible, but prioritize syllabus.";
         }
 
+        // File-chat route can prepend full file content and append:
+        // "User's question: <actual question>".
+        // Intent detection must be based on the actual user ask, not the full file text.
+        const extractedUserQuestion = (() => {
+            const match = String(query || "").match(/User's question:\s*([\s\S]*)$/i);
+            return match?.[1]?.trim() || String(query || "");
+        })();
+        const lowerQuery = extractedUserQuestion.toLowerCase();
+        const isQuizRequest =
+            /\bquiz\b/.test(lowerQuery) ||
+            /\bmcq\b/.test(lowerQuery) ||
+            /question(s)?/.test(lowerQuery) ||
+            /mock test/.test(lowerQuery);
+        const isPlanRequest =
+            /study schedule/.test(lowerQuery) ||
+            /study plan/.test(lowerQuery) ||
+            /\boptimi[sz]e\b/.test(lowerQuery);
+        const is2MarkRequest =
+            /\b2\s*marks?\b/.test(lowerQuery) ||
+            /\btwo\s*marks?\b/.test(lowerQuery);
+        const is16MarkRequest =
+            /\b16\s*marks?\b/.test(lowerQuery) ||
+            /\bsixteen\s*marks?\b/.test(lowerQuery);
+
+        let taskInstruction = `Answer the student's question based on the context.
+If the context is weak or incomplete, still provide a helpful best-effort answer using accurate general academic knowledge.`;
+        let formatInstruction = `2. ALWAYS structure your answer using clear sections. Whenever applicable to the query, use the following exact headings:
+   - **Introduction**: Brief overview of the topic.
+   - **Definition**: Exact meaning or core concept.
+   - **Key Characteristics** / **Key Components**: Main features (use bullet points).
+   - **Importance**: Why it matters or market potential.
+   - **Advantages & Limitations**: Pros and cons, or competitive edge (if relevant).`;
+
+        if (isQuizRequest) {
+            taskInstruction = `Create a quiz directly from the student's request and available context.
+If context is limited, generate a high-quality, topic-relevant quiz using general academic knowledge instead of refusing.
+Include exactly 5 questions unless the student asks for a different count.`;
+            formatInstruction = `2. Format the response as:
+   - A short one-line title.
+   - Exactly 5 numbered questions.
+   - Each question should have 4 options (A-D).
+   - Provide an answer key at the end with brief explanations.`;
+        } else if (isPlanRequest) {
+            taskInstruction = `Generate an actionable study schedule tailored to the student's time horizon and goals.
+If syllabus context is limited, infer a practical plan from common academic best practices.`;
+            formatInstruction = `2. Format with these sections:
+   - **Goal**
+   - **This Week Plan** (day-wise bullets)
+   - **Priority Topics**
+   - **Revision + Self-Test**`;
+        } else if (is2MarkRequest) {
+            taskInstruction = `Provide a short exam-style answer suitable for a 2-mark question.
+Keep it direct and scoring-focused, using the most important definition/fact and one supporting line.`;
+            formatInstruction = `2. Format with these sections:
+   - **Direct Answer** (2-4 concise lines)
+   - **Key Points** (2-3 bullet points only)`;
+        } else if (is16MarkRequest) {
+            taskInstruction = `Provide a detailed exam-style answer suitable for a 16-mark question.
+Cover definition, explanation, structured components, examples/use-cases, and short conclusion.`;
+            formatInstruction = `2. Format with these sections:
+   - **Introduction**
+   - **Detailed Explanation**
+   - **Key Components / Diagram Points**
+   - **Applications / Examples**
+   - **Conclusion**
+   - **Key Points** (6-10 scoring bullets for revision)`;
+        }
+
         // Construct a prompt with RAG context
         const augmentedQuery = `You are a multilingual AI Tutor.
 Context:
@@ -139,17 +207,11 @@ Student Question:
 ${query}
 
 Task:
-Answer the student's question based on the context.
-If the answer is not in the context, say "I couldn't find the answer in the syllabus" (translated to ${language}).
+${taskInstruction}
 
 CRITICAL INSTRUCTION:
 1. Provide the ANSWER ONLY in **${language}**.
-2. ALWAYS structure your answer using clear sections. Whenever applicable to the query, use the following exact headings:
-   - **Introduction**: Brief overview of the topic.
-   - **Definition**: Exact meaning or core concept.
-   - **Key Characteristics** / **Key Components**: Main features (use bullet points).
-   - **Importance**: Why it matters or market potential.
-   - **Advantages & Limitations**: Pros and cons, or competitive edge (if relevant).
+${formatInstruction}
 3. Keep the content within these sections highly CONCISE.
 4. Cleanly format your answer using Markdown and BOLD the key terms.
 `;
@@ -283,13 +345,63 @@ IMPORTANT:
         }
     }
 
-    async generateMockTest(userId, { topic, difficulty, questionCount }) {
-        const context = await this.getContext(`${topic} concepts`, userId);
+    async generateMockTest(userId, { topic, difficulty, questionCount, pdfId, questionType = 'MCQ' }) {
+        let context = "";
+        if (pdfId) {
+            const query = `${topic} concepts`;
+            const [vector] = await generateEmbeddings([query]);
+            const index = pinecone.index(embeddingConfig.indexName);
+            const queryResponse = await index.query({
+                vector,
+                topK: 10,
+                filter: {
+                    userId: userId,
+                    docId: pdfId
+                },
+                includeMetadata: true
+            });
+
+            context = queryResponse.matches
+                .map(match => match.metadata.text)
+                .join("\n\n---\n\n");
+        } else {
+            context = await this.getContext(`${topic} concepts`, userId);
+        }
+
         if (!context || context.trim().length < 50) {
             throw new Error("No syllabus content found. Please upload a PDF syllabus first.");
         }
 
-        const prompt = `
+        const normalizedType = String(questionType || 'MCQ').toUpperCase();
+        const isTwoMark = normalizedType === 'TWO_MARKS';
+
+        const prompt = isTwoMark ? `
+Generate a 2-mark descriptive question paper based on the syllabus context.
+Context: ${context}
+
+Details:
+- Topic: ${topic}
+- Difficulty: ${difficulty}
+- Questions: ${questionCount}
+
+Format as JSON:
+{
+    "title": "Test Title",
+    "questionType": "TWO_MARKS",
+    "questions": [
+        {
+            "id": 1,
+            "text": "2-mark question text",
+            "modelAnswer": "Concise 2-4 line answer suitable for 2 marks",
+            "keyPoints": ["Point 1", "Point 2", "Point 3"]
+        }
+    ]
+}
+IMPORTANT:
+- Keep each modelAnswer concise and exam-ready for 2 marks.
+- keyPoints must be short scoring bullets (2 to 4 bullets).
+- Return ONLY valid JSON.
+        ` : `
 Generate a mock test based on the syllabus.
 Context: ${context}
 
@@ -301,6 +413,7 @@ Details:
 Format as JSON:
 {
     "title": "Test Title",
+    "questionType": "MCQ",
     "questions": [
         {
             "id": 1,
@@ -317,7 +430,11 @@ IMPORTANT: options must be an array of 4 full answer texts (not just letters). c
         try {
             const messages = [{ role: "user", content: prompt }];
             const content = await this.generateCompletion(messages, { type: "json_object" });
-            return JSON.parse(content);
+            const parsed = JSON.parse(content);
+            if (!parsed.questionType) {
+                parsed.questionType = isTwoMark ? 'TWO_MARKS' : 'MCQ';
+            }
+            return parsed;
         } catch (error) {
             console.error("Mock Test Error:", error);
             throw new Error("Failed to generate mock test: " + error.message);

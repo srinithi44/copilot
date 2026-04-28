@@ -29,6 +29,16 @@ export const uploadSyllabus = async (file, userId) => {
     }
 };
 
+export const getDocuments = async (userId) => {
+    try {
+        const response = await api.get('/documents', { params: { userId } });
+        return response.data;
+    } catch (error) {
+        const msg = error.response?.data?.error || error.response?.data?.details || (typeof error.response?.data === 'string' ? error.response.data : error.message);
+        throw new Error(msg || 'Failed to fetch documents');
+    }
+};
+
 export const chatWithAI = async (query, userId, language = 'English') => {
     try {
         const response = await api.post('/ai/chat', { query, userId, language });
@@ -55,6 +65,26 @@ export const generateMockTest = async (data) => {
     } catch (error) {
         const msg = error.response?.data?.error || error.response?.data?.details || (typeof error.response?.data === 'string' ? error.response.data : error.message);
         throw new Error(msg || 'Failed to generate test');
+    }
+};
+
+export const submitMockTestAttempt = async (data) => {
+    try {
+        const response = await api.post('/ai/test/submit', data);
+        return response.data;
+    } catch (error) {
+        const msg = error.response?.data?.error || error.response?.data?.details || (typeof error.response?.data === 'string' ? error.response.data : error.message);
+        throw new Error(msg || 'Failed to submit test attempt');
+    }
+};
+
+export const getWeeklyMockTestProgress = async (userId) => {
+    try {
+        const response = await api.get('/ai/test/weekly-progress', { params: { userId } });
+        return response.data;
+    } catch (error) {
+        const msg = error.response?.data?.error || error.response?.data?.details || (typeof error.response?.data === 'string' ? error.response.data : error.message);
+        throw new Error(msg || 'Failed to fetch weekly mock test progress');
     }
 };
 

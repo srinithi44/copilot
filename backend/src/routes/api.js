@@ -6,7 +6,9 @@ import {
     generatePlan,
     generateTest,
     createPodcast,
-    createFlowchart
+    createFlowchart,
+    submitMockTestAttempt,
+    getWeeklyMockTestProgress
 } from '../controllers/AIController.js';
 import {
     summarizeSessionNotes,
@@ -28,6 +30,8 @@ import User from '../models/User.js';
 router.post('/ai/chat', chatWithAI);
 router.post('/ai/plan', generatePlan);
 router.post('/ai/test', generateTest);
+router.post('/ai/test/submit', submitMockTestAttempt);
+router.get('/ai/test/weekly-progress', getWeeklyMockTestProgress);
 router.post('/ai/podcast', createPodcast);
 router.post('/ai/flowchart', createFlowchart);
 
