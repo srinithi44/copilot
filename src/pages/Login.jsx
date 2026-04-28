@@ -33,14 +33,13 @@ export default function Login() {
                     // User exists in backend (or 200 OK with exists:false)
                     const userData = await response.json();
 
-                    // IF ALREADY VERIFIED -> GO DIRECTLY TO DASHBOARD
-                    if (userData.isVerified) {
-                        return navigate('/dashboard');
+                    // Existing users skip OTP
+                    if (userData.role === 'professor') {
+                        return navigate('/dashboard/professor');
+                    } else if (userData.role === 'admin' || userData.role === 'super_admin') {
+                        return navigate('/dashboard/admin');
                     }
-
-                    // OTHERWISE -> GO TO EMAIL VERIFY (OTP)
-                    const targetPath = location.state?.from?.pathname || userData?.lastActivePath || '/dashboard';
-                    navigate('/email-verify', { state: { from: targetPath } });
+                    return navigate('/dashboard');
 
                 } else {
                     // User not found in backend - needs to complete registration
@@ -79,13 +78,13 @@ export default function Login() {
                     const userData = await response.json();
                     console.log('[Google Sign-In] Existing user found:', userData.role);
 
-                    // IF ALREADY VERIFIED -> GO DIRECTLY TO DASHBOARD
-                    if (userData.isVerified) {
-                        return navigate('/dashboard');
+                    // Existing Google users skip OTP
+                    if (userData.role === 'professor') {
+                        return navigate('/dashboard/professor');
+                    } else if (userData.role === 'admin' || userData.role === 'super_admin') {
+                        return navigate('/dashboard/admin');
                     }
-
-                    // Redirect to email verify for 2FA
-                    navigate('/email-verify', { state: { from: '/dashboard' } });
+                    return navigate('/dashboard');
 
                 } else {
                     // User not found in backend - auto-register as student
@@ -119,18 +118,13 @@ export default function Login() {
                         const retryResponse = await fetch(`${API_BASE_URL}/users/profile?uid=${user.uid}`);
                         if (retryResponse.ok) {
                             const userData = await retryResponse.json();
-                            
-                            if (userData.isVerified) {
-                                return navigate('/dashboard');
-                            }
 
                             if (userData.role === 'professor') {
-                                navigate('/dashboard/professor');
+                                return navigate('/dashboard/professor');
                             } else if (userData.role === 'admin' || userData.role === 'super_admin') {
-                                navigate('/dashboard/admin');
-                            } else {
-                                navigate('/email-verify', { state: { from: '/dashboard' } });
+                                return navigate('/dashboard/admin');
                             }
+                            return navigate('/dashboard');
                         } else {
                             // Fallback to verification
                             navigate('/email-verify', { state: { from: '/dashboard' } });

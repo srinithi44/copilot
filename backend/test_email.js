@@ -21,7 +21,7 @@ async function testEmail() {
     try {
         console.log('Attempting to send to farmoranindia@gmail.com...');
         const { data, error } = await resend.emails.send({
-            from: 'StudyPlanCopilot <onboarding@resend.dev>',
+            from: 'StudyPlanCopilot <support@srinithi.online>',
             to: ['farmoranindia@gmail.com'],
             subject: 'Test Email',
             html: '<p>Test</p>'

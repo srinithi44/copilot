@@ -184,6 +184,8 @@ export default function Podcast() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]); // default English
+    const [fileContext, setFileContext] = useState('');
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [segIdx, setSegIdx] = useState(0);
@@ -309,6 +311,7 @@ export default function Podcast() {
                     topic,
                     userId: currentUser?.uid,
                     language: selectedLang.value,
+                    fileContext: fileContext || undefined
                 }),
             });
             const data = await res.json();
@@ -322,6 +325,45 @@ export default function Podcast() {
             setError('Connection error — is the backend running?');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDocUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const validExts = ['.pdf', '.txt', '.docx'];
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!validExts.includes(ext)) {
+            setError(`Unsupported document format. Use PDF, TXT, or DOCX.`);
+            e.target.value = '';
+            return;
+        }
+
+        setIsUploadingDoc(true);
+        setError('');
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            if (currentUser?.uid) formData.append('userId', currentUser.uid);
+
+            const res = await fetch(`${API_URL}/files/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setFileContext(data.extractedText);
+                setTopic(`Podcast about ${file.name}`);
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (err) {
+            setError('Failed to process document: ' + err.message);
+        } finally {
+            setIsUploadingDoc(false);
+            e.target.value = '';
         }
     };
 
@@ -450,16 +492,33 @@ export default function Podcast() {
                                 {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                             </select>
                         </div>
+                        {/* Document Upload for Podcast Context */}
+                        {fileContext ? (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                <BookOpen size={14} className="text-emerald-500" />
+                                <span className="text-xs font-bold text-emerald-700 truncate max-w-[100px]">Doc Active</span>
+                                <button onClick={() => { setFileContext(''); setTopic(''); }} className="text-emerald-500 hover:text-emerald-700 ml-1">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl font-bold text-sm cursor-pointer transition-all ${isUploadingDoc ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'}`}>
+                                {isUploadingDoc ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} className="text-slate-400" />}
+                                {isUploadingDoc ? 'Extracting...' : 'PDF'}
+                                <input type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={handleDocUpload} disabled={isUploadingDoc} />
+                            </label>
+                        )}
+
                         <input
                             type="text"
                             placeholder="Topic (e.g. Photosynthesis)..."
-                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-56"
+                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-56 flex-1"
                             value={topic}
                             onChange={e => setTopic(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleGenerate()}
                         />
                         <button onClick={handleGenerate} disabled={isLoading || !topic.trim()}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow hover:shadow-md transition-all active:scale-95 disabled:opacity-50">
+                            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow hover:shadow-md transition-all active:scale-95 disabled:opacity-50 min-w-fit">
                             {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
                             Generate
                         </button>
@@ -468,212 +527,212 @@ export default function Podcast() {
 
                 {/* No speech support */}
                 {!SPEECH_SUPPORTED && (
-                        <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-yellow-700 text-sm">
-                            <AlertCircle size={16} /> Your browser doesn't support speech synthesis. Please use Chrome or Edge.
-                        </div>
+                    <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-yellow-700 text-sm">
+                        <AlertCircle size={16} /> Your browser doesn't support speech synthesis. Please use Chrome or Edge.
+                    </div>
+                )}
+
+                {/* Error */}
+                <AnimatePresence>
+                    {error && (
+                        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
+                            <AlertCircle size={16} className="shrink-0" /> {error}
+                        </motion.div>
                     )}
+                </AnimatePresence>
 
-                    {/* Error */}
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
-                                <AlertCircle size={16} className="shrink-0" /> {error}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Loading */}
-                    <AnimatePresence>
-                        {isLoading && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                                className="bg-slate-900 rounded-[36px] p-14 text-white text-center">
-                                <div className="flex flex-col items-center gap-6">
-                                    <div className="flex gap-8">
-                                        {['Alex', 'Dr. Sage'].map((name, i) => (
-                                            <div key={name} className="flex flex-col items-center gap-2">
-                                                <motion.div
-                                                    animate={{ scale: [1, 1.1, 1] }}
-                                                    transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.6 }}
-                                                    className={`w-14 h-14 rounded-full bg-gradient-to-br ${STYLES[name].bg} flex items-center justify-center`}>
-                                                    <Mic2 size={22} className="text-white" />
-                                                </motion.div>
-                                                <span className="text-xs text-white/50 font-bold">{name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="font-bold text-lg">Writing the podcast script…</p>
-                                    <div className="flex gap-1.5">
-                                        {[0, 1, 2, 3, 4].map(i => (
-                                            <motion.div key={i} animate={{ scaleY: [0.2, 1, 0.2] }}
-                                                transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.1 }}
-                                                className="w-1.5 h-6 bg-primary/40 rounded-full origin-bottom" />
-                                        ))}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Player */}
-                    <AnimatePresence>
-                        {podcast && !isLoading && (
-                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                                className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                                {/* Left: Player + transcript */}
-                                <div className="lg:col-span-2 space-y-5">
-
-                                    {/* Player card */}
-                                    <div className="bg-slate-900 rounded-[36px] p-8 text-white shadow-2xl relative overflow-hidden min-h-[440px] flex flex-col items-center justify-center">
-                                        {/* Background glow */}
-                                        <div className={`absolute inset-0 bg-gradient-to-br ${st.bg} opacity-10 blur-3xl transition-all duration-700`} />
-
-                                        <div className="relative z-10 flex flex-col items-center gap-6 w-full text-center">
-
-                                            {/* Speaker avatar */}
-                                            <motion.div layout
-                                                animate={isPlaying ? { scale: [1, 1.06, 1] } : { scale: 1 }}
-                                                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                                                className={`w-24 h-24 bg-gradient-to-br ${st.bg} rounded-[24px] flex items-center justify-center shadow-2xl ring-4 ${st.ring} ring-offset-4 ring-offset-slate-900 transition-all duration-500`}>
-                                                <span className="text-white">{iconFor(seg?.speaker)}</span>
+                {/* Loading */}
+                <AnimatePresence>
+                    {isLoading && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                            className="bg-slate-900 rounded-[36px] p-14 text-white text-center">
+                            <div className="flex flex-col items-center gap-6">
+                                <div className="flex gap-8">
+                                    {['Alex', 'Dr. Sage'].map((name, i) => (
+                                        <div key={name} className="flex flex-col items-center gap-2">
+                                            <motion.div
+                                                animate={{ scale: [1, 1.1, 1] }}
+                                                transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.6 }}
+                                                className={`w-14 h-14 rounded-full bg-gradient-to-br ${STYLES[name].bg} flex items-center justify-center`}>
+                                                <Mic2 size={22} className="text-white" />
                                             </motion.div>
-
-                                            {/* Speaker name + progress */}
-                                            <div className="space-y-1">
-                                                <span className={`text-[11px] font-black uppercase tracking-[0.18em] ${st.label} flex items-center justify-center gap-1.5`}>
-                                                    <Headphones size={11} />
-                                                    {seg?.speaker || 'Loading…'} · Segment {segIdx + 1} / {podcast.segments.length}
-                                                </span>
-                                                <h2 className="text-xl font-bold max-w-sm">{podcast.title}</h2>
-                                            </div>
-
-                                            {/* Waveform */}
-                                            <div className="flex items-center gap-[3px] w-full max-w-xs h-9">
-                                                {[...Array(22)].map((_, i) => (
-                                                    <motion.div key={i}
-                                                        animate={isPlaying
-                                                            ? { scaleY: [0.1, 0.5 + (i % 5) * 0.12, 0.1] }
-                                                            : { scaleY: 0.1 }}
-                                                        transition={{ repeat: Infinity, duration: 0.5 + (i % 6) * 0.07, delay: i * 0.03 }}
-                                                        className="flex-1 bg-white/20 rounded-full origin-center h-full" />
-                                                ))}
-                                            </div>
-
-                                            {/* Controls */}
-                                            <div className="flex items-center gap-8">
-                                                <button onClick={() => goTo(Math.max(0, segIdx - 1))} disabled={segIdx === 0}
-                                                    className="text-white/40 hover:text-white transition disabled:opacity-20 hover:scale-110">
-                                                    <SkipBack size={22} />
-                                                </button>
-                                                <button onClick={togglePlay} disabled={!SPEECH_SUPPORTED}
-                                                    className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition disabled:opacity-40">
-                                                    {isPlaying
-                                                        ? <Pause size={24} fill="currentColor" />
-                                                        : <Play size={24} fill="currentColor" className="ml-0.5" />}
-                                                </button>
-                                                <button onClick={() => goTo(Math.min(podcast.segments.length - 1, segIdx + 1))}
-                                                    disabled={segIdx === podcast.segments.length - 1}
-                                                    className="text-white/40 hover:text-white transition disabled:opacity-20 hover:scale-110">
-                                                    <SkipForward size={22} />
-                                                </button>
-                                            </div>
-
-                                            {/* Volume */}
-                                            <div className="flex items-center gap-3 w-44">
-                                                <button onClick={() => setIsMuted(m => !m)} className="text-white/40 hover:text-white/80 transition">
-                                                    {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-                                                </button>
-                                                <input type="range" min={0} max={1} step={0.05}
-                                                    value={isMuted ? 0 : volume}
-                                                    onChange={e => { setVolume(+e.target.value); setIsMuted(false); }}
-                                                    className="flex-1 accent-primary cursor-pointer" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Transcript for current segment */}
-                                    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-7">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                                                <BookOpen size={15} className="text-secondary" /> Current Segment
-                                            </h3>
-                                            <button onClick={exportTranscript}
-                                                className="text-[10px] font-bold text-slate-400 hover:text-primary flex items-center gap-1.5 transition">
-                                                <Download size={12} /> Export Transcript
-                                            </button>
-                                        </div>
-                                        <AnimatePresence mode="wait">
-                                            <motion.div key={segIdx} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                                                <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full border mb-3 ${st.badge}`}>
-                                                    {iconFor(seg?.speaker) && React.cloneElement(iconFor(seg.speaker), { size: 11 })}
-                                                    {seg?.speaker}
-                                                </span>
-                                                <p className="text-sm text-slate-600 leading-relaxed">"{seg?.text}"</p>
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-                                </div>
-
-                                {/* Right: Segment list */}
-                                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden self-start sticky top-6">
-                                    <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
-                                        <h3 className="font-bold text-slate-800 text-sm">All Segments</h3>
-                                        <span className="text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">{podcast.segments.length}</span>
-                                    </div>
-                                    <div className="max-h-[500px] overflow-y-auto divide-y divide-slate-50">
-                                        {podcast.segments.map((s, i) => {
-                                            const ss = styleFor(s.speaker);
-                                            const active = i === segIdx;
-                                            return (
-                                                <button key={i} onClick={() => goTo(i)}
-                                                    className={`w-full text-left px-4 py-3.5 transition hover:bg-slate-50 border-l-2 ${active ? `bg-amber-50 ${ss.bar}` : 'border-transparent'}`}>
-                                                    <div className="flex items-start gap-3">
-                                                        <div className={`w-8 h-8 shrink-0 rounded-xl bg-gradient-to-br ${ss.bg} flex items-center justify-center text-white text-[10px] font-bold`}>
-                                                            {i + 1}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center justify-between mb-0.5">
-                                                                <span className={`text-[10px] font-black uppercase tracking-wider ${active ? ss.label : 'text-slate-400'}`}>
-                                                                    {s.speaker}
-                                                                </span>
-                                                                {active && isPlaying && (
-                                                                    <span className="flex items-center gap-1 text-[9px] text-primary font-bold">
-                                                                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> Speaking
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-xs text-slate-500 line-clamp-2">{s.text}</p>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                {/* Empty state */}
-                    {!podcast && !isLoading && !error && (
-                        <div className="bg-slate-900 rounded-[36px] p-14 text-white">
-                            <div className="flex flex-col items-center gap-8 opacity-40">
-                                <div className="flex gap-10">
-                                    {[['Alex', 'Host', STYLES['Alex'].bg, <User size={30} />], ['Dr. Sage', 'Expert', STYLES['Dr. Sage'].bg, <GraduationCap size={30} />]].map(([name, role, bg, icon]) => (
-                                        <div key={name} className="flex flex-col items-center gap-3">
-                                            <div className={`w-20 h-20 bg-gradient-to-br ${bg} rounded-3xl flex items-center justify-center shadow-xl text-white`}>{icon}</div>
-                                            <div className="text-center"><p className="font-bold text-sm">{name}</p><p className="text-xs text-white/40">{role}</p></div>
+                                            <span className="text-xs text-white/50 font-bold">{name}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="text-center">
-                                    <p className="font-bold text-xl">Enter a topic and click Generate</p>
-                                    <p className="text-sm text-white/40 mt-1">Alex &amp; Dr. Sage will discuss it in a two-voice conversation</p>
+                                <p className="font-bold text-lg">Writing the podcast script…</p>
+                                <div className="flex gap-1.5">
+                                    {[0, 1, 2, 3, 4].map(i => (
+                                        <motion.div key={i} animate={{ scaleY: [0.2, 1, 0.2] }}
+                                            transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.1 }}
+                                            className="w-1.5 h-6 bg-primary/40 rounded-full origin-bottom" />
+                                    ))}
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
+                </AnimatePresence>
+
+                {/* Player */}
+                <AnimatePresence>
+                    {podcast && !isLoading && (
+                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                            {/* Left: Player + transcript */}
+                            <div className="lg:col-span-2 space-y-5">
+
+                                {/* Player card */}
+                                <div className="bg-slate-900 rounded-[36px] p-8 text-white shadow-2xl relative overflow-hidden min-h-[440px] flex flex-col items-center justify-center">
+                                    {/* Background glow */}
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${st.bg} opacity-10 blur-3xl transition-all duration-700`} />
+
+                                    <div className="relative z-10 flex flex-col items-center gap-6 w-full text-center">
+
+                                        {/* Speaker avatar */}
+                                        <motion.div layout
+                                            animate={isPlaying ? { scale: [1, 1.06, 1] } : { scale: 1 }}
+                                            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                                            className={`w-24 h-24 bg-gradient-to-br ${st.bg} rounded-[24px] flex items-center justify-center shadow-2xl ring-4 ${st.ring} ring-offset-4 ring-offset-slate-900 transition-all duration-500`}>
+                                            <span className="text-white">{iconFor(seg?.speaker)}</span>
+                                        </motion.div>
+
+                                        {/* Speaker name + progress */}
+                                        <div className="space-y-1">
+                                            <span className={`text-[11px] font-black uppercase tracking-[0.18em] ${st.label} flex items-center justify-center gap-1.5`}>
+                                                <Headphones size={11} />
+                                                {seg?.speaker || 'Loading…'} · Segment {segIdx + 1} / {podcast.segments.length}
+                                            </span>
+                                            <h2 className="text-xl font-bold max-w-sm">{podcast.title}</h2>
+                                        </div>
+
+                                        {/* Waveform */}
+                                        <div className="flex items-center gap-[3px] w-full max-w-xs h-9">
+                                            {[...Array(22)].map((_, i) => (
+                                                <motion.div key={i}
+                                                    animate={isPlaying
+                                                        ? { scaleY: [0.1, 0.5 + (i % 5) * 0.12, 0.1] }
+                                                        : { scaleY: 0.1 }}
+                                                    transition={{ repeat: Infinity, duration: 0.5 + (i % 6) * 0.07, delay: i * 0.03 }}
+                                                    className="flex-1 bg-white/20 rounded-full origin-center h-full" />
+                                            ))}
+                                        </div>
+
+                                        {/* Controls */}
+                                        <div className="flex items-center gap-8">
+                                            <button onClick={() => goTo(Math.max(0, segIdx - 1))} disabled={segIdx === 0}
+                                                className="text-white/40 hover:text-white transition disabled:opacity-20 hover:scale-110">
+                                                <SkipBack size={22} />
+                                            </button>
+                                            <button onClick={togglePlay} disabled={!SPEECH_SUPPORTED}
+                                                className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition disabled:opacity-40">
+                                                {isPlaying
+                                                    ? <Pause size={24} fill="currentColor" />
+                                                    : <Play size={24} fill="currentColor" className="ml-0.5" />}
+                                            </button>
+                                            <button onClick={() => goTo(Math.min(podcast.segments.length - 1, segIdx + 1))}
+                                                disabled={segIdx === podcast.segments.length - 1}
+                                                className="text-white/40 hover:text-white transition disabled:opacity-20 hover:scale-110">
+                                                <SkipForward size={22} />
+                                            </button>
+                                        </div>
+
+                                        {/* Volume */}
+                                        <div className="flex items-center gap-3 w-44">
+                                            <button onClick={() => setIsMuted(m => !m)} className="text-white/40 hover:text-white/80 transition">
+                                                {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                                            </button>
+                                            <input type="range" min={0} max={1} step={0.05}
+                                                value={isMuted ? 0 : volume}
+                                                onChange={e => { setVolume(+e.target.value); setIsMuted(false); }}
+                                                className="flex-1 accent-primary cursor-pointer" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Transcript for current segment */}
+                                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-7">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                                            <BookOpen size={15} className="text-secondary" /> Current Segment
+                                        </h3>
+                                        <button onClick={exportTranscript}
+                                            className="text-[10px] font-bold text-slate-400 hover:text-primary flex items-center gap-1.5 transition">
+                                            <Download size={12} /> Export Transcript
+                                        </button>
+                                    </div>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div key={segIdx} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full border mb-3 ${st.badge}`}>
+                                                {iconFor(seg?.speaker) && React.cloneElement(iconFor(seg.speaker), { size: 11 })}
+                                                {seg?.speaker}
+                                            </span>
+                                            <p className="text-sm text-slate-600 leading-relaxed">"{seg?.text}"</p>
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* Right: Segment list */}
+                            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden self-start sticky top-6">
+                                <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+                                    <h3 className="font-bold text-slate-800 text-sm">All Segments</h3>
+                                    <span className="text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">{podcast.segments.length}</span>
+                                </div>
+                                <div className="max-h-[500px] overflow-y-auto divide-y divide-slate-50">
+                                    {podcast.segments.map((s, i) => {
+                                        const ss = styleFor(s.speaker);
+                                        const active = i === segIdx;
+                                        return (
+                                            <button key={i} onClick={() => goTo(i)}
+                                                className={`w-full text-left px-4 py-3.5 transition hover:bg-slate-50 border-l-2 ${active ? `bg-amber-50 ${ss.bar}` : 'border-transparent'}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <div className={`w-8 h-8 shrink-0 rounded-xl bg-gradient-to-br ${ss.bg} flex items-center justify-center text-white text-[10px] font-bold`}>
+                                                        {i + 1}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between mb-0.5">
+                                                            <span className={`text-[10px] font-black uppercase tracking-wider ${active ? ss.label : 'text-slate-400'}`}>
+                                                                {s.speaker}
+                                                            </span>
+                                                            {active && isPlaying && (
+                                                                <span className="flex items-center gap-1 text-[9px] text-primary font-bold">
+                                                                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> Speaking
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 line-clamp-2">{s.text}</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Empty state */}
+                {!podcast && !isLoading && !error && (
+                    <div className="bg-slate-900 rounded-[36px] p-14 text-white">
+                        <div className="flex flex-col items-center gap-8 opacity-40">
+                            <div className="flex gap-10">
+                                {[['Alex', 'Host', STYLES['Alex'].bg, <User size={30} />], ['Dr. Sage', 'Expert', STYLES['Dr. Sage'].bg, <GraduationCap size={30} />]].map(([name, role, bg, icon]) => (
+                                    <div key={name} className="flex flex-col items-center gap-3">
+                                        <div className={`w-20 h-20 bg-gradient-to-br ${bg} rounded-3xl flex items-center justify-center shadow-xl text-white`}>{icon}</div>
+                                        <div className="text-center"><p className="font-bold text-sm">{name}</p><p className="text-xs text-white/40">{role}</p></div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="text-center">
+                                <p className="font-bold text-xl">Enter a topic and click Generate</p>
+                                <p className="text-sm text-white/40 mt-1">Alex &amp; Dr. Sage will discuss it in a two-voice conversation</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* ══ Uploaded Podcast Episodes ═══════════════════════════════════════ */}
                 <div className="mt-8">

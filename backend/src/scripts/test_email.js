@@ -22,7 +22,7 @@ const testEmail = async () => {
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'StudyPlanCopilot <onboarding@resend.dev>',
+            from: 'StudyPlanCopilot <support@srinithi.online>',
             to: ['nithish@example.com'], // Replace with user's verified email if in test mode
             subject: 'Test Email from Debugger',
             html: '<p>If you see this, email sending works!</p>'

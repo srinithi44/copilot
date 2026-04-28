@@ -23,7 +23,7 @@ export default function Signup() {
     // Auth State
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { signup, googleSignIn, currentUser } = useAuth();
+    const { signup, googleSignIn, currentUser, updateUserProfile } = useAuth();
     const navigate = useNavigate();
 
     // Step 1: Account Creation (Firebase)
@@ -103,6 +103,14 @@ export default function Signup() {
                 const errorData = await res.json();
                 throw new Error(errorData.details || "Backend registration failed");
             }
+
+            // Immediately update the AuthContext so the UI reflects the user's role and name
+            updateUserProfile({
+                name: payload.name,
+                role: payload.role,
+                institutionName: payload.institutionName,
+                institutionId: payload.institutionId
+            });
 
             // Redirect to email-verify for 2FA/Verification
             navigate('/email-verify');

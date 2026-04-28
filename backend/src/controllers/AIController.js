@@ -68,7 +68,7 @@ export const generateTest = async (req, res) => {
 export const createPodcast = async (req, res) => {
     console.log("[AIController] createPodcast hit!");
     try {
-        const { topic, userId, language = 'English' } = req.body;
+        const { topic, userId, language = 'English', fileContext } = req.body;
         const uid = userId || req.user?.uid || "dev_user";
 
         if (!topic) return res.status(400).json({ error: "Topic is required" });
@@ -76,7 +76,7 @@ export const createPodcast = async (req, res) => {
         console.log(`[AIController] Podcast: topic="${topic}", language=${language}`);
 
         // 1. Always generate in English (AI is reliable in English)
-        const script = await AIService.generatePodcastScript(uid, topic, 'English');
+        const script = await AIService.generatePodcastScript(uid, topic, fileContext);
 
         // 2. Translate to target language if needed
         const gtCode = GT_CODE[language];

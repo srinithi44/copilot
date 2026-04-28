@@ -432,15 +432,20 @@ Format:
      * @param {string} userId
      * @param {string} topic   - The exact topic the user searched for
      */
-    async generatePodcastScript(userId, topic) {
-        const context = await this.getContext(`${topic} concepts and details`, userId);
+    async generatePodcastScript(userId, topic, fileContext = null) {
+        let context = "";
+        if (fileContext) {
+            context = fileContext.substring(0, 20000); 
+        } else {
+            context = await this.getContext(`${topic} concepts and details`, userId);
+        }
 
         const prompt = `
 You are an expert podcast scriptwriter. Your ONLY job is to write a podcast script STRICTLY about the topic below.
 Write ONLY in English. DO NOT deviate from this topic. DO NOT add unrelated content.
 
 TOPIC: "${topic}"
-SYLLABUS CONTEXT (use if relevant):
+SYLLABUS / UPLOADED CONTEXT (use if relevant):
 ${context || `No syllabus uploaded. Use accurate general knowledge about: ${topic}`}
 
 TWO SPEAKERS:

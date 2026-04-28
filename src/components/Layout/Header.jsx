@@ -29,7 +29,7 @@ const Header = () => {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
-    const userName = currentUser?.displayName?.split(' ')[0] || 'Scholar';
+    const userName = (currentUser?.name || currentUser?.displayName || 'User').split(' ')[0];
 
     const primaryNav = [
         { label: 'AI Assistant', path: '/ask-doubt', icon: <Sparkles size={16} /> },

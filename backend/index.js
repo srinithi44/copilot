@@ -54,7 +54,7 @@ app.use(cors({
         if (isAllowedExact || isAllowedPattern) {
             return callback(null, true);
         }
-        
+
         console.warn(`[CORS] Request from blocked origin: ${origin}`);
         // Instead of throwing an error which might strip CORS headers in some express configs,
         // we return false to indicate it's not allowed.
@@ -63,10 +63,10 @@ app.use(cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
-        'Content-Type', 
-        'Authorization', 
-        'X-Requested-With', 
-        'Accept', 
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
         'Origin',
         'X-Firebase-Auth'
     ]
@@ -105,7 +105,7 @@ app.post('/api/send-otp', async (req, res) => {
     try {
         const emailContent = await generateOTPEmailContent(email, otp);
         const { data, error } = await resend.emails.send({
-            from: 'StudyPlanCopilot <onboarding@resend.dev>',
+            from: 'StudyPlanCopilot <support@srinithi.online>',
             to: [email],
             subject: emailContent.subject,
             html: emailContent.html,

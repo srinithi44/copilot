@@ -43,6 +43,13 @@ export function AuthProvider({ children }) {
         }
     }
 
+    function updateUserProfile(newData) {
+        setCurrentUser(prev => {
+            if (!prev) return null;
+            return { ...prev, ...newData, isNewUser: false };
+        });
+    }
+
     function signup(email, password) {
         return createUserWithEmailAndPassword(auth, email, password);
     }
@@ -140,6 +147,7 @@ export function AuthProvider({ children }) {
 
     const value = {
         currentUser,
+        updateUserProfile,
         signup,
         login,
         logout,

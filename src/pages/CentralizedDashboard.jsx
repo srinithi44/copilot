@@ -27,8 +27,7 @@ const CentralizedDashboard = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
-    
-    const userName = currentUser?.displayName?.split(' ')[0] || 'Nithish';
+    const userName = (currentUser?.name || currentUser?.displayName || 'User').split(' ')[0];
 
     // Mock Data for the centralized view
     const activeStudyPlan = {

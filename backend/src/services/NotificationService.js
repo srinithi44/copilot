@@ -15,7 +15,7 @@ class NotificationService {
     async sendEmail(to, subject, message) {
         try {
             const { data, error } = await resend.emails.send({
-                from: 'StudyPlan Copilot <onboarding@resend.dev>',
+                from: 'StudyPlan Copilot <support@srinithi.online>',
                 to: [to],
                 subject: subject,
                 html: this.formatEmailHTML(message, subject)

@@ -24,7 +24,7 @@ const Dashboard = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [aiQuery, setAiQuery] = React.useState("");
-    const userName = currentUser?.displayName?.split(' ')[0] || 'Nithish';
+    const userName = (currentUser?.name || currentUser?.displayName || 'User').split(' ')[0];
 
     const handleAskAI = () => {
         if (!aiQuery.trim()) return;
