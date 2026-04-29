@@ -23,6 +23,23 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
+    const getCachedUserProfile = () => {
+        try {
+            const raw = window.localStorage.getItem('cachedUserProfile');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const setCachedUserProfile = (profile) => {
+        try {
+            window.localStorage.setItem('cachedUserProfile', JSON.stringify(profile));
+        } catch {
+            // ignore cache failures
+        }
+    };
+
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     // Initialize from storage to avoid re-verify on refresh
@@ -119,6 +136,7 @@ export function AuthProvider({ children }) {
                         } else {
                             // Merge Firebase User with MongoDB User Data
                             // IMPORTANT: We must manually wrap getIdToken because spreading ...user removes prototype methods
+                            setCachedUserProfile(dbUser);
                             setCurrentUser({
                                 ...user,
                                 ...dbUser,
@@ -127,12 +145,33 @@ export function AuthProvider({ children }) {
                         }
                     } else {
                         // Fallback if DB user doesn't exist yet (e.g. partial signup)
+                        const cachedProfile = getCachedUserProfile();
                         setCurrentUser({ ...user, role: 'student' });
+                        if (cachedProfile?.role) {
+                            setCurrentUser({
+                                ...user,
+                                ...cachedProfile,
+                                role: cachedProfile.role,
+                                getIdToken: (force) => user.getIdToken(force)
+                            });
+                        }
                     }
                 } catch (err) {
                     console.error("Failed to fetch user profile", err);
-                    // Use basic user info if backend fails, BUT ensure role is set to 'student' so they aren't kicked out
-                    setCurrentUser({ ...user, role: 'student', isOffline: true });
+                    // If backend is temporarily unavailable, preserve last known role from cache.
+                    const cachedProfile = getCachedUserProfile();
+                    if (cachedProfile?.role) {
+                        setCurrentUser({
+                            ...user,
+                            ...cachedProfile,
+                            role: cachedProfile.role,
+                            isOffline: true,
+                            getIdToken: (force) => user.getIdToken(force)
+                        });
+                    } else {
+                        // Final fallback when no cache exists.
+                        setCurrentUser({ ...user, role: 'student', isOffline: true });
+                    }
                 }
             } else {
                 setCurrentUser(null);

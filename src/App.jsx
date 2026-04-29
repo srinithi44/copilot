@@ -33,6 +33,12 @@ import Podcast from './pages/Podcast';
 import Flowchart from './pages/Flowchart';
 import LandingPage from './pages/LandingPage';
 
+const getDefaultDashboardByRole = (role) => {
+    if (role === 'professor') return '/dashboard/professor';
+    if (role === 'admin' || role === 'super_admin') return '/dashboard/admin';
+    return '/dashboard';
+};
+
 
 function PrivateRoute({ children, allowedRoles }) {
     const { currentUser, is2faVerified } = useAuth();
@@ -50,9 +56,7 @@ function PrivateRoute({ children, allowedRoles }) {
     // Role Check
     if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
         // Redirect to appropriate dashboard based on actual role
-        if (currentUser.role === 'professor') return <Navigate to="/dashboard/professor" />;
-        if (currentUser.role === 'admin') return <Navigate to="/dashboard/admin" />;
-        if (currentUser.role === 'student') return <Navigate to="/dashboard" />;
+        if (currentUser.role) return <Navigate to={getDefaultDashboardByRole(currentUser.role)} replace />;
         // Fallback
         // Fallback - prevent infinite loop by redirecting to login instead of root
         return <Navigate to="/login" replace />;
@@ -71,8 +75,8 @@ function PublicRoute({ children }) {
         if (location.pathname === '/signup') {
             return children;
         }
-        // Otherwise, skip OTP for all existing users logging in and jump straight to the dashboard
-        return <Navigate to="/dashboard" replace />;
+        // Otherwise redirect based on the authenticated user's role
+        return <Navigate to={getDefaultDashboardByRole(currentUser.role)} replace />;
     }
     return children;
 }

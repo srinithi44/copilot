@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getWeeklyMockTestProgress } from '../../services/api';
 
 const Header = () => {
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logout, updateUserProfile } = useAuth();
     const { unreadCount } = useNotifications();
     const navigate = useNavigate();
     const location = useLocation();
@@ -33,6 +33,7 @@ const Header = () => {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [weeklyMockProgress, setWeeklyMockProgress] = useState(null);
     const userName = (currentUser?.name || currentUser?.displayName || 'User').split(' ')[0];
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
     useEffect(() => {
         let mounted = true;
@@ -120,6 +121,46 @@ const Header = () => {
                 )}
             </Link>
         );
+    };
+
+    const handleRoleSwitch = async (role, path) => {
+        try {
+            if (!currentUser?.uid || !currentUser?.email) return;
+
+            const payload = {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                name: currentUser.name || currentUser.displayName || 'User',
+                role,
+                institutionId: currentUser.institutionId || null,
+                institutionName: currentUser.institutionName || 'Unknown',
+                location: currentUser.location || {}
+            };
+
+            const res = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to switch role');
+            }
+
+            updateUserProfile({ role });
+            try {
+                const cached = localStorage.getItem('cachedUserProfile');
+                const parsed = cached ? JSON.parse(cached) : {};
+                localStorage.setItem('cachedUserProfile', JSON.stringify({ ...parsed, role }));
+            } catch (_) {
+                // ignore cache update failure
+            }
+
+            setShowProfileMenu(false);
+            navigate(path);
+        } catch (error) {
+            alert(error.message || 'Role switch failed');
+        }
     };
 
     return (
@@ -212,6 +253,18 @@ const Header = () => {
                                     <div className="p-1 space-y-1">
                                         <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all">
                                             <Settings size={18} className="text-slate-400" /> Account Settings
+                                        </button>
+                                        <button
+                                            onClick={() => handleRoleSwitch('professor', '/dashboard/professor')}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                        >
+                                            <BookOpen size={18} /> Switch to Professor
+                                        </button>
+                                        <button
+                                            onClick={() => handleRoleSwitch('admin', '/dashboard/admin')}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-amber-700 hover:bg-amber-50 rounded-xl transition-all"
+                                        >
+                                            <Settings size={18} /> Switch to Admin
                                         </button>
                                         <button 
                                             onClick={logout}
