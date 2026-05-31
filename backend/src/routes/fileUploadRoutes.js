@@ -58,7 +58,13 @@ router.post('/upload', fileUpload.single('file'), async (req, res) => {
         // Image files — describe them instead of extracting text
         if (['.png', '.jpg', '.jpeg'].includes(ext)) {
             fileType = 'image';
-            extractedText = `[Uploaded image: ${filename}, Size: ${(req.file.size / 1024).toFixed(1)}KB]`;
+            try {
+                const description = await AIService.analyzeImage(req.file.buffer, req.file.mimetype);
+                extractedText = `[Uploaded Image Analysis for ${filename}]:\n${description}`;
+            } catch (imageErr) {
+                console.error('[FileUpload] Image analysis failed:', imageErr.message);
+                extractedText = `[Uploaded image: ${filename}, Size: ${(req.file.size / 1024).toFixed(1)}KB]. Note: Failed to perform AI image analysis.`;
+            }
         } else if (['.txt', '.csv', '.md'].includes(ext)) {
             // Plain text files — read directly
             extractedText = req.file.buffer.toString('utf-8');

@@ -244,6 +244,7 @@ export default function Signup() {
                                 <RoleSelection
                                     selectedRole={formData.role}
                                     onSelect={(role) => setFormData({ ...formData, role })}
+                                    email={currentUser?.email || formData.email}
                                 />
                                 <div className="flex gap-4 pt-4">
                                     <Button variant="secondary" onClick={prevStep} width="full">Back</Button>

@@ -9,7 +9,13 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ error: "UID and Email are required" });
         }
 
-        console.log('[Register] Request:', { uid, email, role });
+        // Enforce Role Restriction: only farmoraindia@gmail.com can be professor or admin
+        let assignedRole = role || 'student';
+        if ((assignedRole === 'admin' || assignedRole === 'professor') && email !== 'farmoraindia@gmail.com') {
+            assignedRole = 'student';
+        }
+
+        console.log('[Register] Request:', { uid, email, role: assignedRole });
 
         // First, check if user exists by UID
         let user = await User.findOne({ uid });
@@ -18,7 +24,7 @@ export const registerUser = async (req, res) => {
             console.log('[Register] User found by UID, updating...');
             // Update existing user metadata if provided
             if (name) user.name = name;
-            if (role) user.role = role;
+            if (assignedRole) user.role = assignedRole;
             if (institutionId) user.institutionId = institutionId;
             if (institutionName) user.institutionName = institutionName;
             if (location) user.location = location;
@@ -37,7 +43,7 @@ export const registerUser = async (req, res) => {
             // and now are signing in with Google
             user.uid = uid;
             if (name) user.name = name;
-            if (role) user.role = role;
+            if (assignedRole) user.role = assignedRole;
             if (institutionId) user.institutionId = institutionId;
             if (institutionName) user.institutionName = institutionName;
             if (location) user.location = location;
@@ -52,7 +58,7 @@ export const registerUser = async (req, res) => {
             uid,
             email,
             name: name || 'Student',
-            role: role || 'student',
+            role: assignedRole,
             institutionId: institutionId || null,
             institutionName: institutionName || 'Unknown',
             location: location || {}

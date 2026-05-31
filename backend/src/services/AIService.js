@@ -133,10 +133,9 @@ class AIService {
         // File-chat route can prepend full file content and append:
         // "User's question: <actual question>".
         // Intent detection must be based on the actual user ask, not the full file text.
-        const extractedUserQuestion = (() => {
-            const match = String(query || "").match(/User's question:\s*([\s\S]*)$/i);
-            return match?.[1]?.trim() || String(query || "");
-        })();
+        const match = String(query || "").match(/User's question:\s*([\s\S]*)$/i);
+        const isFileChat = match !== null;
+        const extractedUserQuestion = match?.[1]?.trim() || String(query || "");
         const lowerQuery = extractedUserQuestion.toLowerCase();
         const isQuizRequest =
             /\bquiz\b/.test(lowerQuery) ||
@@ -153,15 +152,14 @@ class AIService {
         const is16MarkRequest =
             /\b16\s*marks?\b/.test(lowerQuery) ||
             /\bsixteen\s*marks?\b/.test(lowerQuery);
+        const isSummaryRequest =
+            /\bsummary\b/.test(lowerQuery) ||
+            /\bsummarize\b/.test(lowerQuery) ||
+            /\bsummarise\b/.test(lowerQuery);
 
-        let taskInstruction = `Answer the student's question based on the context.
-If the context is weak or incomplete, still provide a helpful best-effort answer using accurate general academic knowledge.`;
-        let formatInstruction = `2. ALWAYS structure your answer using clear sections. Whenever applicable to the query, use the following exact headings:
-   - **Introduction**: Brief overview of the topic.
-   - **Definition**: Exact meaning or core concept.
-   - **Key Characteristics** / **Key Components**: Main features (use bullet points).
-   - **Importance**: Why it matters or market potential.
-   - **Advantages & Limitations**: Pros and cons, or competitive edge (if relevant).`;
+        let taskInstruction = `Answer the student's question strictly based on the context provided.
+If the student asks an off-topic or irrelevant question that is not related to academics or the provided context, politely decline to answer and state that you can only answer questions related to the study material. Do not guess or provide irrelevant answers.`;
+        let formatInstruction = `2. Format your answer naturally and conversationally, similar to a standard ChatGPT response. Use paragraphs, bullet points, or bold text as appropriate to make the answer clear and easy to read.`;
 
         if (isQuizRequest) {
             taskInstruction = `Create a quiz directly from the student's request and available context.
@@ -196,6 +194,12 @@ Cover definition, explanation, structured components, examples/use-cases, and sh
    - **Applications / Examples**
    - **Conclusion**
    - **Key Points** (6-10 scoring bullets for revision)`;
+        } else if (isSummaryRequest) {
+            taskInstruction = `Provide a detailed and comprehensive summary of the requested topic based on the context. Break down the content into clear subtopics and explain what each topic is about, similar to a detailed ChatGPT summary.`;
+            formatInstruction = `2. Format with these sections:
+   - **Overview**: High-level summary of the entire text.
+   - **Key Topics Covered**: Detailed breakdown of each main topic and its subtopics.
+   - **Key Takeaways**: Bullet points of the most important concepts.`;
         }
 
         // Construct a prompt with RAG context
@@ -213,7 +217,7 @@ CRITICAL INSTRUCTION:
 1. Provide the ANSWER ONLY in **${language}**.
 ${formatInstruction}
 3. Keep the content within these sections highly CONCISE.
-4. Cleanly format your answer using Markdown and BOLD the key terms.
+4. Cleanly format your answer using Markdown and BOLD the key terms.${isFileChat ? '\n5. DOCUMENT STRICTNESS: If the answer is NOT explicitly found in the context, your entire response MUST be exactly: "Not found, check it." Do NOT use outside knowledge.' : ''}
 `;
 
         // Try Sarvam first with a timeout, then fall back to generateCompletion (OpenAI → Groq → Gemini)
@@ -742,6 +746,66 @@ Now generate the Mermaid flowchart for: ${topic}
             console.error("Flowchart Data Error:", error);
             throw new Error("Failed to generate flowchart data.");
         }
+    }
+
+    /**
+     * Analyzes an image using Vision models (OpenAI or Gemini).
+     * @param {Buffer} imageBuffer 
+     * @param {string} mimeType 
+     * @returns {Promise<string>}
+     */
+    async analyzeImage(imageBuffer, mimeType) {
+        const prompt = "Please analyze this image carefully. Extract all readable text and describe the key elements, diagrams, or context present in the image. If the image is blurry, unreadable, or not clear, specifically state: 'The image is not clear or readable. Please upload a better quality image.'";
+
+        let useOpenAI = !!process.env.OPENAI_API_KEY;
+
+        if (useOpenAI) {
+            try {
+                const base64Image = imageBuffer.toString('base64');
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o-mini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: `data:${mimeType};base64,${base64Image}`
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens: 1000
+                });
+                return completion.choices[0].message.content;
+            } catch (error) {
+                console.warn("[AIService] OpenAI Vision failed, trying Gemini fallback...", error.message);
+                useOpenAI = false;
+            }
+        }
+
+        if (geminiModel) {
+            try {
+                const result = await geminiModel.generateContent([
+                    prompt,
+                    {
+                        inlineData: {
+                            data: imageBuffer.toString("base64"),
+                            mimeType: mimeType
+                        }
+                    }
+                ]);
+                return result.response.text();
+            } catch (error) {
+                console.error("[AIService] Gemini Vision failed:", error.message);
+                throw new Error("Failed to analyze image with both OpenAI and Gemini.");
+            }
+        }
+
+        throw new Error("No valid AI API keys with Vision support found (OPENAI_API_KEY or GEMINI_API_KEY).");
     }
 }
 export default new AIService();

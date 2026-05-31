@@ -8,12 +8,17 @@ const roles = [
     { id: 'admin', label: 'Admin', icon: Shield, desc: 'Manage institution, users, and overall reports.' }
 ];
 
-export default function RoleSelection({ onSelect, selectedRole }) {
+export default function RoleSelection({ onSelect, selectedRole, email }) {
     return (
         <div className="space-y-4">
             <h3 className="text-xl font-bold text-center text-[var(--text-primary)]">Select Your Role</h3>
             <div className="grid grid-cols-1 gap-4">
                 {roles.map((role) => {
+                    // Restrict Professor and Admin roles to specific email
+                    if ((role.id === 'admin' || role.id === 'professor') && email !== 'farmoraindia@gmail.com') {
+                        return null;
+                    }
+
                     const Icon = role.icon;
                     const isSelected = selectedRole === role.id;
                     return (
